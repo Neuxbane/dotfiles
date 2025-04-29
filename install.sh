@@ -5,8 +5,8 @@ CONFIG_FILE="install.conf"
 DOTFILES_DIR="$(pwd)"
 HOME_DOTFILES="$HOME/.dotfiles"
 
-REQUIRED_DEPS=(bash ln grep)
-OPTIONAL_DEPS=(lemonbar polybar feh)
+REQUIRED_DEPS=(bash ln grep bpswm xorg-server xorg-xinit)
+OPTIONAL_DEPS=(lemonbar polybar feh picom dmenu rofi)
 
 install_yay() {
   echo "yay not found. Installing yay..."
@@ -37,15 +37,22 @@ install_dep() {
 
 check_deps() {
   echo "[Step 1/5] Checking required dependencies..."
+  local missing=()
   for dep in "${REQUIRED_DEPS[@]}"; do
-    if ! command -v "$dep" &>/dev/null; then
+    if ! command -v "$dep" &>/dev/null && ! pacman -Qq "$dep" &>/dev/null; then
       echo "$dep not found. Attempting to install..."
       install_dep "$dep" || { echo "Failed to install $dep. Exiting."; exit 1; }
+      missing+=("$dep")
     fi
   done
+  if [ ${#missing[@]} -eq 0 ]; then
+    echo "All required dependencies are installed."
+  else
+    echo "Installed missing dependencies: ${missing[*]}"
+  fi
   echo "Checking optional dependencies (for full experience)..."
   for dep in "${OPTIONAL_DEPS[@]}"; do
-    if ! command -v "$dep" &>/dev/null; then
+    if ! command -v "$dep" &>/dev/null && ! pacman -Qq "$dep" &>/dev/null; then
       echo "Optional: $dep not found. You may want to install it for extra features."
     fi
   done
