@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-# install.sh - Interactive installer for bpswm dotfiles
-#
-# Features:
-# - Interactive menu for initial setup
-# - Saves configuration to install.conf
-# - Uses symlinks for dotfiles
-# - Prepares for theme and settings integration
-# - Can be re-run to update config or re-link files
+# install.sh - archinstall-style guided installer for bpswm dotfiles
 
 CONFIG_FILE="install.conf"
 DOTFILES_DIR="$(pwd)"
 HOME_DOTFILES="$HOME/.dotfiles"
 
-# Dependency check and install (Arch Linux only)
 REQUIRED_DEPS=(bash ln grep)
 OPTIONAL_DEPS=(lemonbar polybar feh)
 
@@ -44,7 +36,7 @@ install_dep() {
 }
 
 check_deps() {
-  echo "Checking required dependencies..."
+  echo "[Step 1/5] Checking required dependencies..."
   for dep in "${REQUIRED_DEPS[@]}"; do
     if ! command -v "$dep" &>/dev/null; then
       echo "$dep not found. Attempting to install..."
@@ -59,8 +51,6 @@ check_deps() {
   done
 }
 
-check_deps
-
 save_config() {
   echo "THEME=$THEME" > "$CONFIG_FILE"
   echo "WALLPAPER=$WALLPAPER" >> "$CONFIG_FILE"
@@ -71,49 +61,57 @@ load_config() {
 }
 
 link_dotfiles() {
-  echo "Linking dotfiles..."
+  echo "[Step 5/5] Linking dotfiles..."
   mkdir -p "$HOME_DOTFILES"
   for d in framework settings themes; do
     ln -sf "$DOTFILES_DIR/$d" "$HOME_DOTFILES/$d"
   done
   ln -sf "$DOTFILES_DIR/autostart.sh.example" "$HOME_DOTFILES/autostart.sh"
-  echo "Symlinks created in $HOME_DOTFILES."
+  mkdir -p "$HOME/.config/bpswm"
+  ln -sf "$HOME_DOTFILES/autostart.sh" "$HOME/.config/bpswm/autostart.sh"
+  echo "Symlinks created in $HOME_DOTFILES and autostart linked to ~/.config/bpswm/autostart.sh."
 }
 
 choose_theme() {
+  echo "[Step 2/5] Theme Selection"
   echo "Available themes:"
+  local i=1
+  local themes=()
   for theme in themes/*; do
-    [ -d "$theme" ] && echo "- $(basename "$theme")"
+    [ -d "$theme" ] && themes+=("$(basename "$theme")")
   done
-  echo -n "Enter theme name: "
-  read THEME
+  for t in "${themes[@]}"; do
+    echo "  $i) $t"; ((i++));
+  done
+  echo -n "Select a theme [1-${#themes[@]}]: "
+  read idx
+  THEME="${themes[$((idx-1))]}"
 }
 
 choose_wallpaper() {
+  echo "[Step 3/5] Wallpaper Selection"
   echo -n "Enter wallpaper path (image/video): "
   read WALLPAPER
 }
 
-main_menu() {
-  echo "==== bpswm Dotfiles Installer ===="
-  echo "1) Choose Theme"
-  echo "2) Set Wallpaper"
-  echo "3) Link Dotfiles"
-  echo "4) Save Config"
-  echo "5) Exit"
-  echo -n "Select an option: "
+summary() {
+  echo "\n[Step 4/5] Configuration Summary:"
+  echo "  Theme:     $THEME"
+  echo "  Wallpaper: $WALLPAPER"
+  echo "  Dotfiles:  $HOME_DOTFILES"
+  echo "  Autostart: ~/.config/bpswm/autostart.sh"
+  echo ""
+  echo "Proceed with installation? (y/n)"
+  read confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 }
 
+# Main guided flow
 load_config
-while true; do
-  main_menu
-  read choice
-  case $choice in
-    1) choose_theme ;;
-    2) choose_wallpaper ;;
-    3) link_dotfiles ;;
-    4) save_config ; echo "Config saved to $CONFIG_FILE" ;;
-    5) echo "Exiting installer."; break ;;
-    *) echo "Invalid option." ;;
-  esac
-done
+check_deps
+choose_theme
+choose_wallpaper
+summary
+save_config
+link_dotfiles
+echo "\nInstallation complete! You can now start bpswm and enjoy your new setup."
