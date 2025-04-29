@@ -1,57 +1,108 @@
-# bpswm Dotfiles Project Requirements
+# 💖 bpswm Kawaii Pink Rice
 
-## Overview
-This repository provides modular, user-friendly, and extensible dotfiles for the bpswm window manager. It includes an installer, theming support, and a settings application, all designed for easy customization and future expansion.
-
-## Features & Requirements
-
-### 1. Installer Script (`install.sh`)
-- Interactive shell script, similar to `archinstall`.
-- Saves installer configuration for repeatable setups.
-- Uses symbolic links (not copy or move) to link dotfiles into the user's home/config directories.
-- Executes installation steps based on the saved configuration.
-- Allows re-running with the same or updated configuration.
-
-### 2. Theming System
-- Supports multiple themes.
-- Each theme is a directory under `themes/`.
-- Users can add their own theme directories and declare their own functionality.
-- Includes a `kawaii` theme by default, featuring a rounded shape bar.
-- Themes should support rich animations, vibrant colors, transparency, and other modern visual effects.
-- All themes must utilize the shared visual framework/toolkit for animations, color, transparency, and dependency management.
-
-### 2a. Visual Framework
-- Build a shared framework/toolkit to provide:
-  - Common animation, color, and transparency utilities for themes and the settings app.
-  - Centralized management of third-party libraries and dependencies for visual effects.
-  - APIs and helpers to ensure consistency and reusability across all themes.
-  - Easy extensibility for new themes and plugins.
-
-### 3. Settings Application
-- A settings app (GUI or TUI) to configure:
-  - Themes (switch between available themes)
-  - Wallpaper (set image or video backgrounds)
-  - User management (add/remove users, change user settings)
-  - Network settings (Wi-Fi, Ethernet, etc.)
-- Extensible for future configuration options.
-
-### 4. Documentation
-- Clear instructions for:
-  - Installation using `install.sh`
-  - Adding new themes
-  - Using the settings app
-
-### 5. Project Structure
-- `/install.sh`
-- `/themes/kawaii/` (with theme files)
-- `/settings/` (settings app code)
-- `/README.md`
-
-### 6. Optional/Future Features
-- More prebuilt themes.
-- Plugin system for the settings app.
-- Automated tests for installer and settings app.
+A highly customized, aesthetic-focused ricing setup for `bpswm` on **Arch Linux**, themed around **Kawaii Pink**. This configuration is designed to be cute, modern, and fully featured while remaining performant and functional.
 
 ---
 
-Please review these requirements and features. Let us know if you have suggestions or want to adjust the scope before development begins.
+## 📦 Project Requirements
+
+### 🖥️ Base System
+- Arch Linux (rolling release)
+- Xorg display server
+- `.xinitrc` session management (no display manager)
+
+### 🧠 Window Manager
+- `bpswm` – Binary space partitioning tiling window manager  
+  GitHub: https://github.com/baskerville/bpswm
+
+### 🎨 Appearance & Theming
+- **Color Scheme**: Custom pastel Kawaii Pink
+- **GTK Theme**: `Sweet`, `Layan-pink`, or similar
+- **Icon Pack**: `Tela-circle-pink`, `BeautyLine`, `Papirus-Kawaii`
+- **Fonts**: `Comic Mono Nerd Font`, `Quicksand`, `JetBrainsMono Nerd Font`
+- **Cursor Theme**: `Sweet-cursors`, `Bibata-Modern-Ice`
+
+### ⚙️ Essential Tools
+| Function               | Tool                          |
+|------------------------|-------------------------------|
+| Terminal               | `Kitty` / `Alacritty`         |
+| Bar                    | `polybar`                     |
+| Compositor             | `picom-ibhagwan`              |
+| Application Launcher   | `rofi`                        |
+| Notification Daemon    | `dunst`                       |
+| Wallpaper Setter       | `feh` / `nitrogen`            |
+| Lock Screen            | `i3lock-color` / `betterlockscreen` |
+| Audio Control          | `pulseaudio`, `pavucontrol`   |
+| Brightness             | `brightnessctl`               |
+| Screenshots            | `flameshot`                   |
+| Clipboard Manager      | `clipmenu` / `cliphist`       |
+| Power Menu             | Custom `rofi` script          |
+| File Manager           | `pcmanfm` / `Thunar`          |
+
+### 🎵 Extras
+- **Media Controls**: `playerctl`
+- **System Info**: `neofetch`, `btop`
+- **Wallpaper Transition**: `swww`
+- **Night Mode**: `redshift` or `gammastep`
+
+### 🧰 Dotfiles Management
+- **chezmoi** – Git-integrated, portable dotfile manager  
+  Installation: `yay -S chezmoi`
+
+---
+
+## 📁 Suggested Directory Structure
+```
+~/.config/
+├── bpswm/
+├── polybar/
+├── rofi/
+├── picom/
+├── dunst/
+├── kitty/ or alacritty/
+├── wallpapers/
+├── scripts/
+└── gtk-3.0/
+```
+
+---
+
+## 🖼️ Screenshots
+> _Add screenshots here to showcase the setup._
+
+---
+
+## 🚀 Installation
+1. Clone the dotfiles repo:
+   ```bash
+   chezmoi init <your-dotfiles-repo>
+   chezmoi apply
+   ```
+
+2. Install all packages:
+   ```bash
+   sudo pacman -S --needed xorg xorg-xinit kitty alacritty rofi dunst polybar picom nitrogen flameshot \
+       pulseaudio pavucontrol brightnessctl playerctl redshift neofetch btop feh thunar pcmanfm \
+       git base-devel
+   yay -S bpswm i3lock-color ttf-comic-mono-nerd ttf-quicksand ttf-jetbrains-mono-nerd \
+       tela-icon-theme beautyline-icon-theme papirus-icon-theme sweet-gtk-theme sweet-cursors
+   ```
+
+3. Set `.xinitrc` to launch `bpswm`:
+   ```bash
+   echo 'exec bpswm' > ~/.xinitrc
+   startx
+   ```
+
+---
+
+## 📚 Credits
+- [bpswm](https://github.com/baskerville/bpswm)
+- Icon packs and themes from AUR and GNOME-Look
+- Inspired by various Kawaii and pink-themed rices
+
+---
+
+## 🧸 License
+MIT License. Free to customize and share.
+

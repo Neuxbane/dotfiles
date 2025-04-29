@@ -1,124 +1,49 @@
 #!/usr/bin/env bash
-# install.sh - archinstall-style guided installer for bpswm dotfiles
+set -euo pipefail
 
-CONFIG_FILE="install.conf"
-DOTFILES_DIR="$(pwd)"
-HOME_DOTFILES="$HOME/.dotfiles"
+# Determine sudo usage
+if [[ $EUID -ne 0 ]]; then
+    SUDO='sudo'
+else
+    SUDO=''
+fi
 
-REQUIRED_DEPS=(bash ln grep bpswm xorg-server xorg-xinit)
-OPTIONAL_DEPS=(lemonbar polybar feh picom dmenu rofi)
+# Update package database
+echo "Updating package database..."
+$SUDO pacman -Sy
 
-install_yay() {
-  echo "yay not found. Installing yay..."
-  sudo pacman -S --noconfirm --needed git base-devel
-  git clone https://aur.archlinux.org/yay.git /tmp/yay-installer
-  (cd /tmp/yay-installer && makepkg -si --noconfirm)
-  rm -rf /tmp/yay-installer
-}
+# Install official packages
+echo "Installing official packages..."
+$SUDO pacman -S --needed xorg xorg-xinit kitty alacritty rofi dunst polybar picom nitrogen flameshot \
+    pulseaudio pavucontrol brightnessctl playerctl redshift neofetch btop feh thunar pcmanfm git base-devel
 
-install_dep() {
-  dep="$1"
-  if command -v yay &>/dev/null; then
-    yay -S --noconfirm "$dep"
-  else
-    if ! command -v pacman &>/dev/null; then
-      echo "This installer only supports Arch Linux (pacman/yay). Please install $dep manually."
-      return 1
-    fi
-    install_yay
-    if command -v yay &>/dev/null; then
-      yay -S --noconfirm "$dep"
-    else
-      echo "Failed to install yay. Please install $dep manually."
-      return 1
-    fi
-  fi
-}
+# Ensure yay (AUR helper) is installed
+if ! command -v yay >/dev/null 2>&1; then
+    echo "Installing yay (AUR helper)..."
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    cd /tmp/yay
+    makepkg -si --noconfirm
+    cd -
+    rm -rf /tmp/yay
+fi
 
-check_deps() {
-  echo "[Step 1/5] Checking required dependencies..."
-  local missing=()
-  for dep in "${REQUIRED_DEPS[@]}"; do
-    if ! command -v "$dep" &>/dev/null && ! pacman -Qq "$dep" &>/dev/null; then
-      echo "$dep not found. Attempting to install..."
-      install_dep "$dep" || { echo "Failed to install $dep. Exiting."; exit 1; }
-      missing+=("$dep")
-    fi
-  done
-  if [ ${#missing[@]} -eq 0 ]; then
-    echo "All required dependencies are installed."
-  else
-    echo "Installed missing dependencies: ${missing[*]}"
-  fi
-  echo "Checking optional dependencies (for full experience)..."
-  for dep in "${OPTIONAL_DEPS[@]}"; do
-    if ! command -v "$dep" &>/dev/null && ! pacman -Qq "$dep" &>/dev/null; then
-      echo "Optional: $dep not found. You may want to install it for extra features."
-    fi
-  done
-}
+# Install AUR packages
+echo "Installing AUR packages..."
+yay -S --needed bpswm i3lock-color ttf-comic-mono-nerd ttf-quicksand ttf-jetbrains-mono-nerd \
+    tela-icon-theme beautyline-icon-theme papirus-icon-theme sweet-gtk-theme sweet-cursors
 
-save_config() {
-  echo "THEME=$THEME" > "$CONFIG_FILE"
-  echo "WALLPAPER=$WALLPAPER" >> "$CONFIG_FILE"
-}
+# Ensure chezmoi is installed
+if ! command -v chezmoi >/dev/null 2>&1; then
+    echo "Installing chezmoi..."
+    $SUDO pacman -S --needed chezmoi
+fi
 
-load_config() {
-  [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
-}
+# Apply dotfiles with chezmoi from this directory
+echo "Applying dotfiles with chezmoi..."
+chezmoi init --apply "$PWD"
 
-link_dotfiles() {
-  echo "[Step 5/5] Linking dotfiles..."
-  mkdir -p "$HOME_DOTFILES"
-  for d in framework settings themes; do
-    ln -sf "$DOTFILES_DIR/$d" "$HOME_DOTFILES/$d"
-  done
-  ln -sf "$DOTFILES_DIR/autostart.sh.example" "$HOME_DOTFILES/autostart.sh"
-  mkdir -p "$HOME/.config/bpswm"
-  ln -sf "$HOME_DOTFILES/autostart.sh" "$HOME/.config/bpswm/autostart.sh"
-  echo "Symlinks created in $HOME_DOTFILES and autostart linked to ~/.config/bpswm/autostart.sh."
-}
+# Configure .xinitrc to start bpswm
+echo "Setting up .xinitrc for bpswm..."
+echo 'exec bpswm' > ~/.xinitrc
 
-choose_theme() {
-  echo "[Step 2/5] Theme Selection"
-  echo "Available themes:"
-  local i=1
-  local themes=()
-  for theme in themes/*; do
-    [ -d "$theme" ] && themes+=("$(basename "$theme")")
-  done
-  for t in "${themes[@]}"; do
-    echo "  $i) $t"; ((i++));
-  done
-  echo -n "Select a theme [1-${#themes[@]}]: "
-  read idx
-  THEME="${themes[$((idx-1))]}"
-}
-
-choose_wallpaper() {
-  echo "[Step 3/5] Wallpaper Selection"
-  echo -n "Enter wallpaper path (image/video): "
-  read WALLPAPER
-}
-
-summary() {
-  echo "\n[Step 4/5] Configuration Summary:"
-  echo "  Theme:     $THEME"
-  echo "  Wallpaper: $WALLPAPER"
-  echo "  Dotfiles:  $HOME_DOTFILES"
-  echo "  Autostart: ~/.config/bpswm/autostart.sh"
-  echo ""
-  echo "Proceed with installation? (y/n)"
-  read confirm
-  [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
-}
-
-# Main guided flow
-load_config
-check_deps
-choose_theme
-choose_wallpaper
-summary
-save_config
-link_dotfiles
-echo "\nInstallation complete! You can now start bpswm and enjoy your new setup."
+echo "\nAll done! You can now start your session with 'startx'."
